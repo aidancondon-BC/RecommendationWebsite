@@ -8,9 +8,7 @@ class Profile:
     spotlink = ""
     top_artists = []
     top_genres = []
-    likes = []
     reviewed = []
-    dislikes = []
     playlist = []
     personal_matrix = None
     personal_links = None
@@ -55,6 +53,9 @@ class Profile:
 
     def get_songThresholdReached(self):
         return self.songThresholdReached
+    
+    def get_reviewed(self):
+        return self.reviewed
 
     def set_name(self, name):
         self.name = name
@@ -88,12 +89,10 @@ class Profile:
     
     def set_top_genres(self, genres):
         self.top_genres = genres
-    
-    def add_liked_song(self, song):
-        self.likes.append(song)
-    
-    def add_disliked_song(self, song):
-        self.dislikes.append(song)
+        
+    def add_review(self, idx, review):
+        self.df.iloc[idx]['Review'] = review
+        self.reviewed.append(idx)
 
     def searching(self, word):
         word = word.lower()
@@ -118,46 +117,4 @@ class Profile:
         searches.reverse()
         return searches[:10] if len(possible_searches) >= 10 else searches
 
-    def songs_to_NOT_rec(self):
-        songs_prob_not_like = []
-        if len(self.dislikes) == 0: return []
-        for song_index in self.dislikes:
-            similiar_songs = list(enumerate(self.personal_matrix[song_index]))
-            sorted_sim_songs = [x for x in similiar_songs if x[1] > 0.9]
-            if len(sorted_sim_songs) == 0: continue
-            songs_as_dict = {}
-            [songs_as_dict.update({k:v}) for k,v in sorted_sim_songs]
-            for song in list(songs_as_dict.keys()): 
-                songs_prob_not_like.append(song)
-        return songs_prob_not_like
-
-    def songs_to_recommend(self):
-        recommended_songs = []
-        songs_prob_not_like = self.songs_to_NOT_rec()
-        for song_index in self.likes:
-            similiar_songs = list(enumerate(self.personal_matrix[song_index]))
-            sorted_sim_songs = [x for x in similiar_songs if x[1] > 0.7]
-            if len(sorted_sim_songs) == 0: continue
-            for song in sorted_sim_songs:
-                if song[0] in songs_prob_not_like or song[0] in self.likes: continue
-                recommended_songs.append(song)
-        return recommended_songs
-
-    def make(self, web):
-        songs_as_dict = {}
-        [songs_as_dict.update({k:v}) for k,v in self.songs_to_recommend()]
-        idxs = list(set(songs_as_dict.keys()))
-        idxs.extend(self.likes)
-        df_and_matrix = web.make_musical_matrix(idxs, self.df)
-        df = df_and_matrix[0].reset_index(drop=True)
-        matrix = df_and_matrix[1]
-        possible_playlist_songs = []
-        nums = 0
-        lower = len(idxs) - len(self.likes)
-        upper = len(idxs)
-        for idx in range(lower, upper):
-            sims = list(enumerate(matrix[idx]))
-            possible_playlist_songs.extend(sims)
-        possible = {}
-        [possible.update({k:v}) for k,v in possible_playlist_songs]
-        self.playlist = sorted(possible, key=possible.get)[:10]
+    

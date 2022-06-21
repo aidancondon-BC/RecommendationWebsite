@@ -47,6 +47,7 @@ class MainWindow(StackLayout):
     # CSV File from link above
     web_data = web('SpotifyFeatures.csv')
     df = web_data.get_data()
+    df['Review'] = None
     user = prof(df)
     num_songs_asked = 0
     songs_to_ask = []
@@ -182,23 +183,41 @@ class MainWindow(StackLayout):
         make_decision
     """
 
+    # green most: rgba(13, 120, 15, 1)
+    # red most: rgba(230, 33, 5, 1)
+    def implement_ratings(self):
+        layout = GridLayout(rows=1, cols=10)
+        colors = ['red', 'orange', 'yellow', 'blue', 'green']
+        for x in range(5):
+            cur_button = Button(text=str(x+1),
+                                font_size=50,
+                                background_color=colors[x])
+            cur_button.bind(on_press=self.make_decision)
+            layout.add_widget(cur_button)
+        self.path_to_SP.ratings.add_widget(layout)
+
     def set_songs_to_ask(self):
         songs = []
         fav_artists = self.user.get_top_artists()
         fav_genres = self.user.get_top_genres()
         df_and_matrix = self.web_data.make_matrix_by_genres(fav_artists, fav_genres)
         cur_df = df_and_matrix[0]
-        matrix = df_and_matrix[1]
+        matrix = np.subtract(df_and_matrix[1], df_and_matrix[2])
         self.user.set_df(cur_df)
         self.user.set_personal_matrix(matrix)
         idxs_fav_art_songs = ((cur_df[cur_df['artist_name'].isin(fav_artists)]).index).unique()
         for idx in idxs_fav_art_songs:
-            similiar_songs = list(enumerate(matrix[idx]))
-            filter_sim_songs = np.array([x for x in similiar_songs if x[1] > 0.73])
-            for song in filter_sim_songs:
-                if int(song[0]) not in songs:
-                    songs.append(int(song[0]))
-        self.songs_to_ask = np.random.choice(songs, len(songs), replace=False)
+            songs_w_simsRats = list(enumerate(matrix[idx]))
+            songs_w_simsRats = [x for x in songs_w_simsRats if x[1] < 1.0]
+            songs.extend(songs_w_simsRats)
+        songs = sorted(songs_w_simsRats, key=lambda pair: pair[1], reverse=True)
+        songs = [x[0] for x in songs if x[0] not in list(idxs_fav_art_songs)]
+        self.songs_to_ask = list(dict.fromkeys(songs))
+        ln_idxs = len(idxs_fav_art_songs)
+        ln_songs = len(self.songs_to_ask)
+        new_idxs = np.random.randint(0, ln_songs, ln_idxs)
+        for x in range(ln_idxs): 
+            self.songs_to_ask.insert(new_idxs[x], idxs_fav_art_songs[x])
 
     def get_song(self, index):
         dataFrame = self.user.get_df()
@@ -214,20 +233,17 @@ class MainWindow(StackLayout):
         self.path_to_SP.song.text = self.get_song(songs[idx])
         self.num_songs_asked += 1
     
-    def make_decision(self, isLike):
+    def make_decision(self, instance):
         idx = int(self.path_to_SP.song.name)
-        if isLike:
-            self.user.add_liked_song(idx)
-        else:
-            self.user.add_disliked_song(idx)
-        ln_likes = len(self.user.get_likes())
-        ln_dislikes = len(self.user.get_dislikes())
+        self.user.add_review(idx, int(instance.text))
         isEnoughDecisions = self.user.get_songThresholdReached()
-        if (not isEnoughDecisions) and ((ln_likes + ln_dislikes) >= 20):
+        rev_count = len(self.user.get_reviewed())
+        if (not isEnoughDecisions) and (rev_count >= 20):
             self.ids.toPlaylist.text = 'Make Playlist'
             self.ids.toPlaylist.font_size = 30
             self.ids.toPlaylist.on_press = self.goToPlaylist
             self.user.set_songThresholdReached(True)
+        print(self.user.get_reviewed())
         self.initialize()
 
     def goToPlaylist(self):

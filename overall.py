@@ -36,27 +36,26 @@ class Website:
             cur_df = self.condense_df(cur_df, fav_genres)
         return self.make_matrix(cur_df.reset_index(drop=True))
 
-    def make_musical_matrix(self, idxs, dataFrame):
-        cur_df = dataFrame.iloc[idxs]
+    def make_musical_matrix(self, dataFrame):
+        cur_df = dataFrame
         cur_df = cur_df[cur_df.columns[6:18]].drop(columns=['key', 'mode', 'time_signature'])
-        print(cur_df)
         return self.musical_matrix(cur_df)
 
     def make_matrix(self, dataFrame):
-        genre = 'genre:' + dataFrame['genre'] + ' '
-        artist = 'artist:' + dataFrame['artist_name'] + ' '
-        key = 'key:' + dataFrame['key'] + ' '
-        mode = 'mode:' + dataFrame['mode'] + ' '
-        time_signature = 'time_signature:' + dataFrame['time_signature'] + " "
+        genre = dataFrame['genre'] + ' '
+        artist = dataFrame['artist_name'] + ' '
+        key = dataFrame['key'] + ' '
+        mode = dataFrame['mode'] + ' '
+        time_signature = dataFrame['time_signature'] + ' '
         dataFrame['merged_cols'] = genre + artist + key + mode + time_signature
         cv = CountVectorizer()
         count_matrix = cv.fit_transform(dataFrame['merged_cols'])
-        return [dataFrame, cosine_similarity(count_matrix)]
+        return [dataFrame, cosine_similarity(count_matrix), self.make_musical_matrix(dataFrame)]
 
     def musical_matrix(self, dataFrame):
         nums = dataFrame.values
         matrix = distance.cdist(nums, nums, 'correlation')
-        return [dataFrame, matrix]
+        return matrix
 
 
     def get_artist_top_songs(self, artist):

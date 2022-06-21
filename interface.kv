@@ -121,6 +121,7 @@
 
 <SongPage>:
     on_pre_enter:
+        app.root.implement_ratings()
         app.root.set_songs_to_ask()
         app.root.initialize()
     BoxLayout:
@@ -130,25 +131,12 @@
             id: song
             background_color: 'blue'
             size_hint: (1.0, 0.5)
+            font_size: 40
             pos_hint: {'center_y': 0.75}
     BoxLayout:
-        id: decisionBoxs
+        id: ratings
         orientation: 'horizontal'
-        Button:
-            id: dislike
-            name: 'no'
-            text: 'NO'
-            background_color: 'red'
-            size_hint: (0.5, 0.5)
-            on_press: app.root.make_decision(False)
-        Button:
-            id: like
-            name: 'yes'
-            text: 'YES'
-            background_color: 'green'
-            size_hint: (0.5, 0.5)
-            pos_hint: {'center_x': 0.5}
-            on_press: app.root.make_decision(True)
+        size_hint: (1, 0.5)
 
 <PlaylistPage>
     bx: bx
