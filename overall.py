@@ -34,7 +34,9 @@ class Website:
         cur_df = self.specify_df(fav_artists, fav_genres)
         if cur_df.shape[0] > 10000:
             cur_df = self.condense_df(cur_df, fav_genres)
-        return self.make_matrix(cur_df.reset_index(drop=True))
+        cur_df = cur_df.drop_duplicates(subset=['artist_name','track_name'])
+        cur_df = cur_df.reset_index(drop=True)
+        return self.make_matrix(cur_df)
 
     def make_musical_matrix(self, dataFrame):
         cur_df = dataFrame
@@ -54,7 +56,7 @@ class Website:
 
     def musical_matrix(self, dataFrame):
         nums = dataFrame.values
-        matrix = distance.cdist(nums, nums, 'correlation')
+        matrix = distance.cdist(nums, nums, 'euclidean')
         return matrix
 
 

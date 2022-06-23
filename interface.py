@@ -234,7 +234,8 @@ class MainWindow(StackLayout):
         self.num_songs_asked += 1
     
     def make_decision(self, instance):
-        idx = int(self.path_to_SP.song.name)
+        name = self.path_to_SP.song.name
+        idx = int(name)
         self.user.add_review(idx, int(instance.text))
         isEnoughDecisions = self.user.get_songThresholdReached()
         rev_count = len(self.user.get_reviewed())
@@ -243,7 +244,6 @@ class MainWindow(StackLayout):
             self.ids.toPlaylist.font_size = 30
             self.ids.toPlaylist.on_press = self.goToPlaylist
             self.user.set_songThresholdReached(True)
-        print(self.user.get_reviewed())
         self.initialize()
 
     def goToPlaylist(self):
