@@ -202,7 +202,7 @@ class MainWindow(StackLayout):
         fav_genres = self.user.get_top_genres()
         df_and_matrix = self.web_data.make_matrix_by_genres(fav_artists, fav_genres)
         cur_df = df_and_matrix[0]
-        matrix = np.subtract(df_and_matrix[1], df_and_matrix[2])
+        matrix = df_and_matrix[1]
         self.user.set_df(cur_df)
         self.user.set_personal_matrix(matrix)
         idxs_fav_art_songs = ((cur_df[cur_df['artist_name'].isin(fav_artists)]).index).unique()
@@ -240,11 +240,19 @@ class MainWindow(StackLayout):
         isEnoughDecisions = self.user.get_songThresholdReached()
         rev_count = len(self.user.get_reviewed())
         if (not isEnoughDecisions) and (rev_count >= 20):
-            self.ids.toPlaylist.text = 'Make Playlist'
+            # self.ids.toPlaylist.text = 'Make Playlist'
             self.ids.toPlaylist.font_size = 30
             self.ids.toPlaylist.on_press = self.goToPlaylist
             self.user.set_songThresholdReached(True)
+        if rev_count % 15 == 0: self.resetSTA()    
         self.initialize()
+
+    def resetSTA(self):
+        self.user.set_df(self.web_data.giveDfPredictions(self.user.get_df()))
+        df = self.user.get_df()
+        df_wo_rev = df[df['Review'].isna()]
+        self.num_songs_asked = 0
+        self.songs_to_ask = list((df_wo_rev.sort_values(by=['Predictions'])).index)
 
     def goToPlaylist(self):
         self.ids.WM.current = 'Playlist Page'

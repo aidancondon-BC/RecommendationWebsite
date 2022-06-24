@@ -3,6 +3,8 @@ import numpy as np
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.feature_extraction.text import CountVectorizer
 from scipy.spatial import distance
+from sklearn.neighbors import KNeighborsRegressor
+from sklearn.preprocessing import OrdinalEncoder
 
 class Website:
 
@@ -38,11 +40,6 @@ class Website:
         cur_df = cur_df.reset_index(drop=True)
         return self.make_matrix(cur_df)
 
-    def make_musical_matrix(self, dataFrame):
-        cur_df = dataFrame
-        cur_df = cur_df[cur_df.columns[6:18]].drop(columns=['key', 'mode', 'time_signature'])
-        return self.musical_matrix(cur_df)
-
     def make_matrix(self, dataFrame):
         genre = dataFrame['genre'] + ' '
         artist = dataFrame['artist_name'] + ' '
@@ -52,13 +49,34 @@ class Website:
         dataFrame['merged_cols'] = genre + artist + key + mode + time_signature
         cv = CountVectorizer()
         count_matrix = cv.fit_transform(dataFrame['merged_cols'])
-        return [dataFrame, cosine_similarity(count_matrix), self.make_musical_matrix(dataFrame)]
+        return [dataFrame, cosine_similarity(count_matrix)]
 
     def musical_matrix(self, dataFrame):
         nums = dataFrame.values
         matrix = distance.cdist(nums, nums, 'euclidean')
         return matrix
 
+    def giveDfPredictions(self, dataFrame):
+        df_w_revs = dataFrame[dataFrame['Review'].notna()]
+        all_df = dataFrame
+        features = ["genre","artist_name","popularity","acousticness","danceability","duration_ms","energy","instrumentalness","key","liveness","loudness","mode","speechiness","tempo","time_signature","valence"]
+        to_predict = all_df[features]
+        X = df_w_revs[features]
+        y = df_w_revs.Review
+        s = (X.dtypes == 'object')
+        object_cols = list(s[s].index)
+        label_X = X.copy()
+        label_TP = to_predict.copy()
+        label_X[object_cols] = OrdinalEncoder().fit_transform(X[object_cols])
+        label_TP[object_cols] = OrdinalEncoder().fit_transform(to_predict[object_cols])
+        model = KNeighborsRegressor()
+        model.fit(label_X, y)
+        predictions = model.predict(label_TP)
+        dataFrame['Predictions'] = None
+        for i in range(dataFrame.shape[0]):
+            dataFrame.at[i, 'Predictions'] = predictions[i]
+        return dataFrame
+        
 
     def get_artist_top_songs(self, artist):
         tops = self.df.query('artist_name == @artist')

@@ -91,7 +91,7 @@ class Profile:
         self.top_genres = genres
         
     def add_review(self, idx, review):
-        self.df.iloc[idx]['Review'] = review
+        self.df.at[idx, 'Review'] = review
         self.reviewed.append(idx)
 
     def searching(self, word):
