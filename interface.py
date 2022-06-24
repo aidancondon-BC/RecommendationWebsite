@@ -181,6 +181,7 @@ class MainWindow(StackLayout):
         get_song
         initialize
         make_decision
+        resetSTA
     """
 
     # green most: rgba(13, 120, 15, 1)
@@ -244,7 +245,7 @@ class MainWindow(StackLayout):
             self.ids.toPlaylist.font_size = 30
             self.ids.toPlaylist.on_press = self.goToPlaylist
             self.user.set_songThresholdReached(True)
-        if rev_count % 15 == 0: self.resetSTA()    
+        if rev_count % 5 == 0: self.resetSTA()    
         self.initialize()
 
     def resetSTA(self):
@@ -252,7 +253,8 @@ class MainWindow(StackLayout):
         df = self.user.get_df()
         df_wo_rev = df[df['Review'].isna()]
         self.num_songs_asked = 0
-        self.songs_to_ask = list((df_wo_rev.sort_values(by=['Predictions'])).index)
+        self.songs_to_ask = list((df_wo_rev.sort_values(by=['Predictions'], ascending=False)).index)
+        print(df_wo_rev.sort_values(by=['Predictions'], ascending=False))
 
     def goToPlaylist(self):
         self.ids.WM.current = 'Playlist Page'

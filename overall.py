@@ -69,7 +69,8 @@ class Website:
         label_TP = to_predict.copy()
         label_X[object_cols] = OrdinalEncoder().fit_transform(X[object_cols])
         label_TP[object_cols] = OrdinalEncoder().fit_transform(to_predict[object_cols])
-        model = KNeighborsRegressor()
+        K = int(df_w_revs.shape[0] ** 0.5)
+        model = KNeighborsRegressor(n_neighbors=K, metric='euclidean')
         model.fit(label_X, y)
         predictions = model.predict(label_TP)
         dataFrame['Predictions'] = None
